@@ -42,55 +42,182 @@ PRIVATE_KEY = (
 )
 
 
-def request_process (obj, api, params={}, headers={}):
+def register (obj, api, params={}, headers={}):
     string = "{}".format(params)
     data = {
         "data": obj.encrypt_text(string)
     }
     try:
         x = requests.post(
-            url=URL+api,
+            url=URL+"/register/",
             data=data, 
             headers=headers
         )
-        responde = x.json()['response']
-        dec_responde = obj.decrypt_text(responde).replace('\'', '\"')
-        token = json.loads(dec_responde)
-        return token
-
+        if x.status_code == 200:
+            responde = x.json()['response']
+            dec_responde = obj.decrypt_text(responde).replace('\'', '\"')
+            token = json.loads(dec_responde)['token']
+            return token
+        else:
+            return ""
     except Exception as e:
-        print("request failed.")
+        print("Register request failed.")
         print(e)
         sleep(5)
 
-   
+
+def login (obj, api, params={}, headers={}):
+    string = "{}".format(params)
+    data = {
+        "data": obj.encrypt_text(string)
+    }
+    try:
+        x = requests.post(
+            url=URL+"/login/",
+            data=data, 
+            headers=headers
+        )
+        if x.status_code == 200:
+            responde = x.json()['response']
+            dec_responde = obj.decrypt_text(responde).replace('\'', '\"')
+            token = json.loads(dec_responde)['token']
+            print("You have successfully logged in")
+            return token
+        elif x.status_code == 401:
+            print("Login Failed. Check your credentials")
+            return ""
+    except Exception as e:
+        print("Login request failed.")
+        print(e)
+        sleep(5)
+
+
 def list_items(obj, headers):
     try:
         x = requests.post(
             url=URL+"/list/",
             headers=headers
         )
-        # requests.get(
-        #     url="http://127.0.0.1:8000/list/", 
-        #     headers={"Authorization": "Token 857aa0f582eeb49a6c2d0a6e850dcfb84b35307e"}
-        # )
-        print(x.json())
-        responde = x.json()['response']
-        responde = obj.decrypt_text(responde)
-        items = []
-        items.append(json.loads(responde))
-        print("----------------------------------------------------------------------------")
-        print("File Name", '\t|', "owner", '\t\t|', "conf. label", '\t|', "integrity label")
-        for item in items:
-            print(
-                item['file_name'], '\t\t|', 
-                item['owner'], '\t\t|', 
-                item['confidentiality_label'], '\t\t|', 
-                item['integrity_label']
-            )
-        print("----------------------------------------------------------------------------")
+        if x.status_code == 200:
+            responde = x.json()['response']
+            responde = obj.decrypt_text(responde)
+            responde = json.loads(responde)
+            print("----------------------------------------------------------------------------")
+            print("File Name", '\t|', "owner", '\t\t|', "conf. label", '\t|', "integrity label")
+            for item in responde:
+                print(
+                    item['file_name'], '\t\t|', 
+                    item['owner'], '\t\t|', 
+                    item['confidentiality_label'], '\t\t|', 
+                    item['integrity_label']
+                )
+            print("----------------------------------------------------------------------------")
+        elif x.status_code == 401:
+            print("Please login")
     except Exception as e:
         print("list request failed.")
+        print(e)
+
+
+def upload(obj, params, headers):
+    try:
+        string = "{}".format(params)
+        data = {
+            "data": obj.encrypt_text(string)
+        }
+        x = requests.put(
+            url=URL+"/upload/",
+            data=data,
+            headers=headers
+        )
+        if x.status_code == 200:
+            print("File uploaded successfully")
+        elif x.status_code == 401:
+            print("Please login")
+        elif x.status_code == 400:
+            print("Upload failed")
+    except Exception as e:
+        print("Upload failed")
+        print(e)
+
+
+def read_file(obj, params, headers):
+    try:
+        string = "{}".format(params)
+        data = {
+            "data": obj.encrypt_text(string)
+        }
+        x = requests.post(
+            url=URL+"/read/",
+            data=data,
+            headers=headers
+        )
+        if x.status_code == 200:
+            responde = x.json()['response']
+            responde = obj.decrypt_text(responde).replace('\'', '\"')
+            print(responde)
+        elif x.status_code == 401:
+            print("Please login")
+        elif x.status_code == 403:
+            print("Access Denied")
+        elif x.status_code == 503:
+            print("File does not exist")
+    except Exception as e:
+        print("read failed.")
+        print(e)
+
+
+def write_file(obj, params, headers):
+    try:
+        string = "{}".format(params)
+        data = {
+            "data": obj.encrypt_text(string)
+        }
+        x = requests.post(
+            url=URL+"/write/",
+            data=data,
+            headers=headers
+        )
+        if x.status_code == 200:
+            responde = x.json()['response']
+            responde = obj.decrypt_text(responde).replace('\'', '\"')
+            print(responde)
+        elif x.status_code == 401:
+            print("Please login")
+        elif x.status_code == 403:
+            print("Access Denied")
+        elif x.status_code == 503:
+            print("File does not exist")
+    except Exception as e:
+        print("Write failed")
+        print(e)
+
+
+def get(obj, params, headers):
+    try:
+        string = "{}".format(params)
+        data = {
+            "data": obj.encrypt_text(string)
+        }
+        x = requests.post(
+            url=URL+"/get/",
+            data=data,
+            headers=headers
+        )
+        if x.status_code == 200
+            responde = x.json()['response']
+            responde = obj.decrypt_text(responde).replace('\'', '\"')
+            with open("./"+responde['file_name'], 'w') as f:
+                f.write(responde['data_file'])
+        elif x.status_code == 401:
+            print("Please login")
+        elif x.status_code == 403:
+            print("Access Denied")
+        elif x.status_code == 503:
+            print("File does not exist")
+
+    except Exception as e:
+        print("Get failed")
         print(e)
 
 
@@ -124,6 +251,8 @@ if __name__ == "__main__":
         menu()
         command = input("~$ ")
         command = command.split()
+        if len(command) == 0:
+            continue
         if command[0] == "register":
             if len(command) == 5:
                 parameters= {
@@ -135,8 +264,7 @@ if __name__ == "__main__":
                 headers = {
                     "Session-Key": enc_ses
                 }
-                responde = request_process(obj=cipher, api="/register/", params=parameters, headers=headers)
-                print(responde)
+                responde = register(obj=cipher, api="/register/", params=parameters, headers=headers)
             else:
                 print("Invalid command.")
                 print("<Usage>: register <username> <password> <conf. label> <integrity label>")
@@ -144,43 +272,85 @@ if __name__ == "__main__":
             if len(command) == 3:
                 parameters= {
                     "username": command[1],
-                    "password": command[2],
+                    "password": command[2]
                 }
                 headers = {
                     "Session-Key": enc_ses
                 }
-                responde = request_process(obj=cipher, api="/login/", params=parameters, headers=headers)
-                print(responde)
-                print(type(responde))
-                Token = responde['token']
+                Token = login(obj=cipher, api="/login/", params=parameters, headers=headers)
             else:
                 print("Invalid command.")
                 print("<Usage>: login <username> <password>")
         elif command[0] == "put":
             print("put")
             if len(command) == 4:
-                pass
+                try:
+                    file_obj = open(command[1], 'r').read()
+                    data = {
+                        "file_name": command[1],
+                        "data_file": file_obj,
+                        "confidentiality_label": command[2],
+                        "integrity_label": command[3]
+                    }
+                    headers = {
+                        "Session-Key": enc_ses,
+                        "Authorization": "Token " + Token
+                    }
+                    upload(obj=cipher, params=data, headers=headers)
+                except OSError as e:
+                    print(e)
             else:
                 print("Invalid command.")
                 print("<Usage>: put <filename> <conf.label> <integrity label>")
         elif command[0] == "read":
             print("read")
             if len(command) == 2:
-                pass
+                try:
+                    data = {
+                        "file_name": command[1]
+                    }
+                    headers = {
+                        "Session-Key": enc_ses,
+                        "Authorization": "Token " + Token
+                    }
+                    read_file(obj=cipher, params=data, headers=headers)
+                except Exception as e:
+                    print(e)
             else:
                 print("Invalid command.")
                 print("<Usage>: read <filename>")
         elif command[0] == "write":
             print("write")
-            if len(command) == 3:
-                pass
+            if len(command) > 3:
+                try:
+                    data = {
+                        "file_name": command[1],
+                        "content": ' '.join([str(element) for element in command[2:]])
+                    }
+                    headers = {
+                        "Session-Key": enc_ses,
+                        "Authorization": "Token " + Token
+                    }
+                    write_file(obj=cipher, params=data, headers=headers)
+                except OSError as e:
+                    print(e)
             else:
                 print("Invalid command.")
                 print("<Usage>: write <filename> <content>")
         elif command[0] == "get":
             print("get")
             if len(command) == 2:
-                pass
+                try:
+                    data = {
+                        "file_name": command[1]
+                    }
+                    headers = {
+                        "Session-Key": enc_ses,
+                        "Authorization": "Token " + Token
+                    }
+                    get(obj=cipher, params=data, headers=headers)
+                except OSError as e:
+                    print(e)
             else:
                 print("Invalid command.")
                 print("<Usage>: get <filename>")
@@ -190,7 +360,6 @@ if __name__ == "__main__":
                     "Session-Key": enc_ses,
                     "Authorization": "Token " + Token
                 }
-                print(headers)
                 list_items(obj=cipher, headers=headers)
             else:
                 print("Invalid command.")

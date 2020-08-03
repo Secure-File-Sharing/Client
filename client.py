@@ -138,8 +138,8 @@ def upload(obj, params, headers):
             print("File uploaded successfully")
         elif x.status_code == 401:
             print("Please login")
-        elif x.status_code == 400:
-            print("Upload failed. The reason could be for that file name exist")
+        else:
+            print("Upload failed.")
     except Exception as e:
         print("Upload failed")
         print(e.__class__.__name__)
@@ -226,6 +226,30 @@ def get(obj, params, headers):
         print(e.__class__.__name__)
 
 
+def chmod(obj, params, headers):
+    try:
+        string = "{}".format(params)
+        data = {
+            "data": obj.encrypt_text(string)
+        }
+        x = requests.post(
+            url=URL+"/chmod/",
+            data=data,
+            headers=headers
+        )
+        if x.status_code == 200 or \
+                x.status_code == 403 or \
+                x.status_code == 503:
+            responde = x.json()['response']
+            responde = obj.decrypt_text(responde).replace('\'', '\"')
+            print(responde)
+        else:
+            print("Access granting failed")
+    except Exception as e:
+        print("Access request Failed")
+        print(e.__class__.__name__)
+
+
 def entrance_menu():
     print("<Usage>: ")
     print("\t> register <username> <password> <conf. label> <integrity label>") 
@@ -239,6 +263,7 @@ def main_menu():
     print("\t> read <filename>")
     print("\t> write <filename> <content>")
     print("\t> get <filename>")
+    print("\t> chmod <access> <username> <filename>")
     print("\t> ls")
     print("\t> clear")
     print("\t> quit")
@@ -278,6 +303,8 @@ if __name__ == "__main__":
                 else:
                     print("Invalid command.")
                     print("<Usage>: register <username> <password> <conf. label> <integrity label>")
+                    print("\tConfidentiality label: TopSecret(1), Secret(2), Confidential(3), Unclassified(4)")
+                    print("\tIntegrity label: VeryTrusted(1), Trusted(2), SlightlyTrusted(3), Untrusted(4)")
             elif command[0] == "login":
                 if len(command) == 3:
                     parameters= {
@@ -332,6 +359,8 @@ if __name__ == "__main__":
                 else:
                     print("Invalid command.")
                     print("<Usage>: put <filename> <conf.label> <integrity label>")
+                    print("\tConfidentiality label: TopSecret(1), Secret(2), Confidential(3), Unclassified(4)")
+                    print("\tIntegrity label: VeryTrusted(1), Trusted(2), SlightlyTrusted(3), Untrusted(4)")
             elif command[0] == "read":
                 if len(command) == 2:
                     try:
@@ -370,7 +399,6 @@ if __name__ == "__main__":
                     print("Invalid command.")
                     print("<Usage>: write <filename> <content>")
             elif command[0] == "get":
-                print("get")
                 if len(command) == 2:
                     try:
                         data = {
@@ -396,6 +424,23 @@ if __name__ == "__main__":
                 else:
                     print("Invalid command.")
                     print("<Usage>: ls")
+            elif command[0] == "chmod":
+                if len(command) == 4:
+                    data = {
+                        "access": command[1],
+                        "subject": command[2],
+                        "obj": command[3]
+                    }
+                    headers = {
+                        "Session-Key": enc_ses,
+                        "Authorization": "Token " + Token
+                    }
+                    chmod(obj=cipher, params=data, headers=headers)
+                else:
+                    print("Invalid command.")
+                    print("<Usage>: chmod <access> <username> <filename>")
+                    print("\taccess: None(0), Read(1), Write(2), Read/Write(3), Get(4)")
+                    print("\t        Get/Read(5), Get/Write(6), Get/Write/Read(7)")
             elif command[0] == "clear":
                 clear_screen()
             elif command[0] == "quit":

@@ -13,6 +13,6 @@ COPY client.py ./
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-RUN apt-get update && apt-get install iputils-ping
+RUN apt-get update && apt-get install iputils-ping nano
 
 CMD ping 127.0.0.1
